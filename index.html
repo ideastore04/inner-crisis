@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Миниатюра — Валерий Садовский</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,200;0,300;0,400;1,200;1,300;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%;
+  background: #04060a;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  display: flex; align-items: center; justify-content: center;
+}
+:root {
+  --bw: min(360px, 88vw);
+  --bh: min(578px, 81.6vh);
+}
+.book {
+  width: var(--bw);
+  height: var(--bh);
+  min-width: var(--bw);
+  min-height: var(--bh);
+  max-width: var(--bw);
+  max-height: var(--bh);
+  position: relative;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.95), 0 6px 20px rgba(0,0,0,0.7);
+  overflow: hidden;
+}
+.page {
+  display: none;
+  width: var(--bw);
+  height: var(--bh);
+  min-height: var(--bh);
+  max-height: var(--bh);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.page.active { display: flex; flex-direction: column; height: var(--bh); }
+
+.cover {
+  flex: 1; position: relative;
+  cursor: pointer; user-select: none; overflow: hidden;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  padding: clamp(34px,7.5vh,62px) clamp(28px,7.5vw,52px) clamp(28px,6.5vh,52px);
+}
+.cover-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.cover-top    { z-index:5; display:flex; flex-direction:column; align-items:center; gap:6px; }
+.cover-middle { z-index:5; position: relative; }
+.cover-bottom { z-index:5; display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.5vh,11px); }
+
+.cover-genre {
+  font-family:'Cormorant',serif;
+  font-size: clamp(7px,1.6vw,9px);
+  font-weight: 200;
+  letter-spacing: 10px;
+  color: rgba(212,175,95,0.65);
+  text-transform: uppercase;
+}
+
+/* Language indicator — tiny, near dragonfly */
+.lang-indicator {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Cormorant', serif;
+  font-size: 8px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  color: rgba(212,175,95,0.3);
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.dragonfly-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  display: block;
+}
+.dragonfly-btn:active svg { opacity: 0.7; }
+
+.cover-title {
+  font-family:'Cormorant',serif;
+  font-size: clamp(10px,2.6vw,13.5px);
+  font-weight: 200;
+  font-style: italic;
+  letter-spacing: 1px;
+  color: rgba(212,175,95,0.92);
+  text-align: center;
+  line-height: 2;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.cover-rule { display:flex; align-items:center; gap:7px; }
+.cover-rule-line { width:26px; height:0.5px; background:rgba(212,175,95,0.45); }
+.cover-rule-gem  { width:4px; height:4px; background:rgba(212,175,95,0.65); transform:rotate(45deg); }
+.cover-sub {
+  font-family:'Cormorant',serif;
+  font-size: clamp(7px,1.6vw,9px);
+  font-weight: 200;
+  letter-spacing: 6px;
+  color: rgba(180,142,68,0.5);
+  text-transform: uppercase;
+  font-style: italic;
+}
+.cover-author {
+  font-family:'Cormorant',serif;
+  font-size: clamp(8px,1.8vw,10px);
+  font-weight: 200;
+  letter-spacing: 6px;
+  color: rgba(212,175,95,0.7);
+  text-transform: uppercase;
+}
+.hint {
+  position:absolute; bottom:clamp(10px,2vh,18px); left:0; right:0;
+  text-align:center; font-family:'Cormorant',serif; font-size:9px;
+  letter-spacing:5px; color:rgba(212,175,95,0.22); text-transform:uppercase;
+  z-index:5; animation:pulse 3s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes pulse{0%,100%{opacity:0.15}50%{opacity:0.65}}
+
+/* TEXT PAGES */
+.textpage {
+  background:#EEE5C8; flex:1; display:flex; flex-direction:column;
+  padding:clamp(18px,3.5vh,32px) clamp(18px,5vw,36px) 0;
+  height: 100%;
+  overflow: hidden;
+}
+.tbody{flex:1;overflow:hidden;padding-bottom:6px;}
+.p{font-family:'Playfair Display SC',serif;font-size:clamp(10.5px,2.7vw,12.5px);font-weight:400;letter-spacing:0.03em;line-height:1.45;color:#1a1008;text-align:justify;hyphens:auto;margin-bottom:0.5em;}
+.p.drop::first-letter{font-family:'Playfair Display',serif;font-size:4.2em;font-weight:400;font-style:italic;float:left;line-height:0.68;margin-right:8px;margin-top:8px;color:#1a0a00;}
+.end{text-align:center;color:rgba(80,50,20,0.5);font-family:'Playfair Display',serif;font-size:14px;letter-spacing:10px;margin-top:20px;font-weight:300;}
+.page-rule {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: clamp(8px,1.5vh,12px);
+  flex-shrink: 0;
+}
+.page-rule-line {
+  flex: 1;
+  height: 0.4px;
+  background: rgba(60,40,15,0.18);
+}
+.page-rule-dot {
+  width: 3px;
+  height: 3px;
+  background: rgba(60,40,15,0.22);
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+.nav{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 0 clamp(11px,2.4vh,19px);}
+.nbtn{font-family:'Playfair Display SC',serif;font-size:11px;font-weight:300;color:rgba(50,25,5,0.45);letter-spacing:3px;text-transform:uppercase;cursor:pointer;background:none;border:none;padding:8px 10px;-webkit-tap-highlight-color:transparent;user-select:none;min-width:76px;}
+.nbtn.r{text-align:right;}.nbtn.l{text-align:left;}.nbtn.hide{visibility:hidden;}.nbtn:active{color:#2a0e00;}
+.nnum{font-family:'Playfair Display',serif;font-style:italic;font-size:11px;font-weight:300;font-style:italic;color:rgba(50,25,5,0.4);letter-spacing:1px;}
+</style>
+</head>
+<body>
+<div class="book" id="book">
+
+  <div class="page active" id="p0">
+    <div class="cover" id="coverDiv">
+      <canvas class="cover-canvas" id="cvs"></canvas>
+
+      <div class="cover-top">
+        <div class="cover-genre" id="cg">Миниатюра</div>
+      </div>
+
+      <div class="cover-middle">
+        <button class="dragonfly-btn" id="dragonfly-btn" onclick="cycleLang(event)" title="Сменить язык">
+          <svg width="110" height="110" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="80" cy="80" r="52" stroke="rgba(212,175,95,0.12)" stroke-width="0.5"/>
+            <circle cx="80" cy="80" r="48" stroke="rgba(212,175,95,0.18)" stroke-width="0.5"/>
+            <path d="M80 74 Q54 50 22 60 Q12 68 18 76 Q24 84 52 79 Q70 76 80 78" stroke="rgba(212,175,95,0.82)" stroke-width="0.7" fill="rgba(212,175,95,0.06)"/>
+            <path d="M80 74 Q106 50 138 60 Q148 68 142 76 Q136 84 108 79 Q90 76 80 78" stroke="rgba(212,175,95,0.82)" stroke-width="0.7" fill="rgba(212,175,95,0.06)"/>
+            <path d="M80 76 Q60 64 40 66" stroke="rgba(212,175,95,0.32)" stroke-width="0.35" fill="none"/>
+            <path d="M80 76 Q56 72 34 76" stroke="rgba(212,175,95,0.22)" stroke-width="0.3" fill="none"/>
+            <path d="M80 76 Q64 58 50 57" stroke="rgba(212,175,95,0.2)" stroke-width="0.28" fill="none"/>
+            <path d="M80 76 Q100 64 120 66" stroke="rgba(212,175,95,0.32)" stroke-width="0.35" fill="none"/>
+            <path d="M80 76 Q104 72 126 76" stroke="rgba(212,175,95,0.22)" stroke-width="0.3" fill="none"/>
+            <path d="M80 76 Q96 58 110 57" stroke="rgba(212,175,95,0.2)" stroke-width="0.28" fill="none"/>
+            <path d="M80 82 Q58 66 30 74 Q20 80 26 88 Q32 96 58 91 Q74 87 80 86" stroke="rgba(212,175,95,0.65)" stroke-width="0.6" fill="rgba(212,175,95,0.04)"/>
+            <path d="M80 82 Q102 66 130 74 Q140 80 134 88 Q128 96 102 91 Q86 87 80 86" stroke="rgba(212,175,95,0.65)" stroke-width="0.6" fill="rgba(212,175,95,0.04)"/>
+            <path d="M80 84 Q62 76 44 78" stroke="rgba(212,175,95,0.22)" stroke-width="0.28" fill="none"/>
+            <path d="M80 84 Q98 76 116 78" stroke="rgba(212,175,95,0.22)" stroke-width="0.28" fill="none"/>
+            <ellipse cx="80" cy="80" rx="4.5" ry="9" stroke="rgba(212,175,95,0.85)" stroke-width="0.7" fill="rgba(212,175,95,0.15)"/>
+            <ellipse cx="79" cy="77" rx="1.5" ry="3.5" fill="rgba(212,175,95,0.2)"/>
+            <circle cx="80" cy="67" r="6.5" stroke="rgba(212,175,95,0.8)" stroke-width="0.7" fill="rgba(212,175,95,0.12)"/>
+            <ellipse cx="75.5" cy="65.5" rx="3" ry="2.6" stroke="rgba(212,175,95,0.7)" stroke-width="0.5" fill="rgba(212,175,95,0.2)"/>
+            <ellipse cx="84.5" cy="65.5" rx="3" ry="2.6" stroke="rgba(212,175,95,0.7)" stroke-width="0.5" fill="rgba(212,175,95,0.2)"/>
+            <ellipse cx="75" cy="65" rx="1.2" ry="1" fill="rgba(212,175,95,0.35)"/>
+            <ellipse cx="84" cy="65" rx="1.2" ry="1" fill="rgba(212,175,95,0.35)"/>
+            <path d="M76.5 62 Q71 53 66 46" stroke="rgba(212,175,95,0.6)" stroke-width="0.6" fill="none"/>
+            <path d="M83.5 62 Q89 53 94 46" stroke="rgba(212,175,95,0.6)" stroke-width="0.6" fill="none"/>
+            <circle cx="66" cy="46" r="1.3" fill="rgba(212,175,95,0.55)"/>
+            <circle cx="94" cy="46" r="1.3" fill="rgba(212,175,95,0.55)"/>
+            <line x1="76" y1="89.5" x2="84" y2="89.5" stroke="rgba(212,175,95,0.4)" stroke-width="0.45"/>
+            <ellipse cx="80" cy="95" rx="3.5" ry="5" stroke="rgba(212,175,95,0.6)" stroke-width="0.5" fill="rgba(212,175,95,0.08)"/>
+            <line x1="76.5" y1="100" x2="83.5" y2="100" stroke="rgba(212,175,95,0.32)" stroke-width="0.4"/>
+            <ellipse cx="80" cy="105.5" rx="3" ry="4.5" stroke="rgba(212,175,95,0.52)" stroke-width="0.45" fill="rgba(212,175,95,0.07)"/>
+            <line x1="77" y1="110" x2="83" y2="110" stroke="rgba(212,175,95,0.26)" stroke-width="0.35"/>
+            <ellipse cx="80" cy="115" rx="2.5" ry="4" stroke="rgba(212,175,95,0.44)" stroke-width="0.4" fill="rgba(212,175,95,0.06)"/>
+            <line x1="77.5" y1="119" x2="82.5" y2="119" stroke="rgba(212,175,95,0.2)" stroke-width="0.3"/>
+            <ellipse cx="80" cy="123.5" rx="2" ry="3.5" stroke="rgba(212,175,95,0.35)" stroke-width="0.35" fill="rgba(212,175,95,0.05)"/>
+            <ellipse cx="80" cy="130" rx="1.5" ry="3" stroke="rgba(212,175,95,0.25)" stroke-width="0.3" fill="rgba(212,175,95,0.04)"/>
+          </svg>
+        </button>
+        <div class="lang-indicator" id="langIndicator">ru</div>
+      </div>
+
+      <div class="cover-bottom">
+        <div class="cover-rule"><div class="cover-rule-line"></div><div class="cover-rule-gem"></div><div class="cover-rule-line"></div></div>
+        <div class="cover-title" id="ct">О внутреннем кризисе<br>и возвращении к себе</div>
+        <div class="cover-rule"><div class="cover-rule-line"></div><div class="cover-rule-gem"></div><div class="cover-rule-line"></div></div>
+        <div class="cover-sub" id="cs">сон как опыт</div>
+        <div class="cover-author" id="ca">Валерий Садовский</div>
+      </div>
+      <div class="hint" id="ch">открыть ›</div>
+    </div>
+  </div>
+
+  <!-- PAGES will be rendered by JS based on language -->
+  <div id="pages-container"></div>
+
+</div>
+
+<script>
+// ── CONTENT IN THREE LANGUAGES ──────────────────────────────────────
+
+const LANGS = ['ru', 'en', 'ro'];
+let langIdx = 0;
+let cur = 0;
+
+const coverText = {
+  ru: { genre:'Миниатюра', title:'О внутреннем кризисе<br>и возвращении к себе', sub:'сон как опыт', author:'Валерий Садовский', hint:'открыть ›' },
+  en: { genre:'Miniature', title:'On the Inner Crisis<br>and the Return to Oneself', sub:'a dream as experience', author:'Valery Sadovsky', hint:'open ›' },
+  ro: { genre:'Miniatură', title:'Despre criza interioară<br>și întoarcerea la sine', sub:'un vis ca experiență', author:'Valery Sadovsky', hint:'deschide ›' }
+};
+
+const pages = {
+  ru: [
+    `<p class="p drop">Мне снился сон. Не знаю, была ли там катастрофа или какое-то коллективное бедствие, но в воздухе витало ощущение того, что это событие коснулось каждого радикально и необратимо. Снилось место, похожее на остров. Меня привезли туда вместе с людьми, в том числе с теми, кого я знал почти всю сознательную жизнь. Мы выросли среди одних и тех же улиц и дворов. И почему-то я знал, что именно те, кто устроил это бедствие, и привезли нас туда. Было ощущение того, что они никуда не исчезали и всё это время продолжали наблюдать за нами. Нас оставили жить под чьим-то невидимым вниманием. Никто не приходил к нам, но все понимали, что выбраться оттуда невозможно.</p>
+    <p class="p">Остров был совсем маленьким — таким, что его можно было пересечь пешком за несколько минут. Небольшое озеро, несколько деревьев, узкая тропинка вокруг воды и место, где лежали продукты. Мы постоянно ходили по этому кругу, всё время оставаясь на виду.</p>
+    <p class="p">Всё остальное время проходило в одном тесном пространстве, где невозможно было не замечать окружающих. Не потому что мы стремились узнать кого-то ближе, а потому что сама жизнь там была устроена так, что постоянное наблюдение становилось её естественной частью. Со временем мы начали знать чужие привычки, реакции, молчание, движения, то, как каждый ест, смотрит, думает, чем занимается и как именно это делает.</p>`,
+    `<p class="p">Мы наблюдали друг за другом, зная, что за нами тоже наблюдают. Позже всем нам стало понятно, что у этого наблюдения не было ни единого мотива, словно в нём не существовало никакой необходимости. Напротив — сама необходимость порождала наблюдение. Непонятно было, что порождало её и кто вообще стоял за этим процессом. Это чувство не покидало меня ни при свете дня, ни ночью, когда луна отражалась в неподвижной глади озера, в которую каждый из нас всматривался почти интуитивно, будто пытаясь обнаружить внутри этого отражения недостающий фрагмент понимания.</p>
+    <p class="p">Слишком мало места, чтобы скрыть собственную жизнь. Всё происходило на виду — повседневность, слабости, болезни, похоть, неловкость, одиночество, раздражение, молчание. Даже когда кто-то уходил к озеру, деревьям или просто в сторону, остальные всё равно понимали куда, зачем и почему. Постепенно мы начали понимать окружающих так же, как самих себя, потому что проживали одинаковые состояния и повторяли одно и то же. Позже даже попытки что-то скрыть начинали терять смысл. Всё равно становилось видно, кто человек на самом деле, чего он боится, от чего бежит, что пытается спрятать внутри себя и чего в действительности хочет. Суть каждого постепенно оказывалась словно на ладони для остальных.</p>
+    <p class="p">Затем начинало казаться, что, наблюдая за окружающими, мы постепенно познаём устройство самих себя. Будто через чужие привычки, страхи, желания и реакции каждый из нас пытался понять, откуда вообще появляется личность и почему человек становится именно тем, кем становится. И чем глубже мы узнавали других, тем отчётливее начинали видеть самих себя.</p>`,
+    `<p class="p">Со временем приходило понимание, что каждый человек, входящий в нашу жизнь, постепенно становится частью нас самих — отражается внутри личности, превращаясь в одну из её внутренних частей.</p>
+    <p class="p">И однажды мне начало казаться, что люди, оказавшиеся со мной на острове, те, кто наблюдал за нами, и даже те, кто привёз нас туда, никогда не были чем-то по-настоящему отдельным. Будто какая-то внутренняя катастрофа однажды разделила меня на множество фигур, отражённых в людях, когда-либо появлявшихся в моей жизни. И чем дольше я всматривался в них, тем сильнее становилось ощущение, что всё это время я наблюдал не чужие жизни, а разные формы собственной расколотой личности, постепенно соединяющейся с собственными осколками — через то, как мы наблюдали, узнавали и проживали друг друга.</p>
+    <p class="p">Со временем всё меньше ощущалось, где заканчиваюсь я и начинается кто-то другой. И, кажется, все переживали нечто похожее. Будто сам остров, люди и пространство вокруг постепенно становились единым целым. Каждый понимал, что проживает опыт растворения — в окружающих, в этом месте, в самой жизни, которая нас туда поместила. Иногда мне начинало казаться, что остров не разделил нас, а наоборот — показал, что всё это время мы уже были чем-то одним, просто раньше не замечали этого. Будто личность медленно растворялась внутри общей реальности, которая включала в себя и того невидимого наблюдателя, и тех, кто удерживал нас на острове.</p>`,
+    `<p class="p">И вместе с этим приходило другое понимание — жизнь непреодолимо сильнее нас самих, сильнее желаний, намерений и стремлений. А ещё глубже раскрывалось ощущение, что и сами желания никогда по-настоящему нам не принадлежали. Будто жизнь воспроизводила их внутри нас так же, как воспроизводила события, обстоятельства и весь тот опыт, через который мы проходили на острове. Словно сам остров был лишь формой жизни, поместившей нас внутрь определённого переживания, постепенно становившегося нами.</p>
+    <p class="p">Мы старели рядом, почти не замечая этого. И постепенно существование на острове начинало казаться единственно возможной формой жизни. Со временем границы между нами становились всё менее ощутимыми. Будто, проживая рядом столько лет, мы постепенно растворялись друг в друге, в самом острове и в той жизни, которая нас туда поместила. А потом, спустя будто целую вечность, нас отпустили.</p>
+    <p class="p">И вместе с этим словно исчезло само ощущение острова. Мы забыли его, забыли тот опыт, друг друга и в каком-то смысле — самих себя.</p>
+    <p class="p">И всё же меня не покидало ощущение, что сон не закончился. Что остров не исчез — он просто растворился в том, что стало обычной жизнью. Будто мы не проснулись, а лишь перешли в другую его часть, где те же законы действовали иначе — без берегов, без тропинки, без общего круга, но с тем же невидимым присутствием, которое когда-то держало нас вместе.</p>`,
+    `<p class="p">Люди оказались в разных уголках мира, среди другой жизни, других городов, других обстоятельств. Но спустя время внутри меня начали всплывать фрагменты этого переживания — как воспоминания о сне, который невозможно удержать целиком. Я не помнил лиц. Помнил лишь состояния, ощущения, само чувство растворения друг в друге и в той общей жизни, частью которой мы однажды стали.</p>
+    <p class="p">И вместе с этим появилось почти непреодолимое чувство, что мне необходимо кого-то найти, хотя я ещё не понимал кого именно.</p>
+    <p class="p">Тогда я начал искать не по лицам, а по самому себе — по привычкам, движениям, ремеслу, по тем вещам, которые продолжал делать сам. Потому что однажды на острове мы стали слишком похожи друг на друга. И постепенно, находя этих людей в разных городах и чужих жизнях, я начинал понимать, что ищу не просто других людей, а фрагменты того общего переживания, внутри которого мы когда-то перестали быть чем-то отдельным.</p>
+    <p class="p">Когда я находил кого-то из них, меня сперва не узнавали. Тогда я показывал им что-то, чего не мог знать никто, кроме тех, кто был на острове. И в этот момент между нами снова возникало узнавание — не меня как человека, а того общего опыта, который когда-то соединил нас внутри одной и той же жизни.</p>
+    <p class="p">И постепенно становилось всё яснее, что всё это время память словно пыталась собрать обратно не воспоминания о других людях, а что-то когда-то разделившееся внутри одной и той же личности.</p>`,
+
+    `<p class="p">Кажется, некоторые люди встречаются в конце жизни именно так. Не как старые друзья, а как части чего-то одного, когда-то разделённого самой жизнью и ею же вновь соединённого общей памятью о пережитом.</p>`
+  ],
+
+  en: [
+    `<p class="p drop">I had a dream. I don't know whether there was a catastrophe or some collective disaster, but the air was filled with a sense that this event had touched everyone radically and irreversibly. I dreamed of a place that resembled an island. I was brought there together with people, including those I had known for almost my entire conscious life. We grew up among the same streets and courtyards. And for some reason I knew that those who had arranged this disaster were the ones who brought us there. There was a feeling that they had never disappeared and had been watching us all along. We were left to live under someone's invisible attention. No one came to us, but everyone understood that escape was impossible.</p>
+    <p class="p">The island was very small — small enough to cross on foot in a few minutes. A small lake, a few trees, a narrow path around the water, and a place where food was kept. We walked this circle constantly, always remaining in sight of one another.</p>
+    <p class="p">All other time passed in one tight space where it was impossible not to notice those around you. Not because we sought to know each other better, but because life there was arranged so that constant observation became its natural part. Over time we began to know each other's habits, reactions, silences, movements — the way each person eats, looks, thinks, what they do and exactly how they do it.</p>`,
+    `<p class="p">We observed each other, knowing that we too were being observed. Later it became clear to all of us that this observation had no single motive — as though no necessity existed for it at all. On the contrary: necessity itself gave rise to the observation. It was unclear what gave rise to that necessity, or who stood behind the process. This feeling did not leave me either by day or at night, when the moon reflected in the still surface of the lake into which each of us gazed almost intuitively, as though trying to find within that reflection the missing fragment of understanding.</p>
+    <p class="p">Too little space to hide one's own life. Everything happened in plain sight — the everyday, weaknesses, illness, lust, awkwardness, loneliness, irritation, silence. Even when someone walked away toward the lake, the trees, or simply aside, the rest still understood where, why, and for what reason. Gradually we began to understand those around us the way we understood ourselves, because we lived through the same states and repeated the same things. Later, even attempts to conceal something began to lose meaning. It became visible anyway — who a person really was, what they feared, what they fled from, what they tried to hide inside themselves, and what they truly wanted. The essence of each gradually lay open to all the rest.</p>
+    <p class="p">Then it began to seem that, in observing those around us, we were gradually coming to understand our own inner structure. As though through others' habits, fears, desires, and reactions each of us was trying to understand where a person comes from at all and why one becomes exactly who one becomes. And the deeper we came to know others, the more clearly we began to see ourselves.</p>`,
+    `<p class="p">In time came the understanding that every person who enters our life gradually becomes part of us — is reflected within the personality, becoming one of its inner parts.</p>
+    <p class="p">And one day I began to feel that the people who had ended up on the island with me, those who had watched over us, and even those who had brought us there, had never been something truly separate. As though some inner catastrophe had once divided me into a multitude of figures reflected in the people who had ever appeared in my life. And the longer I looked into them, the stronger grew the feeling that all this time I had not been watching other people's lives, but different forms of my own shattered self, gradually rejoining its own fragments — through how we observed, recognised, and lived through one another.</p>
+    <p class="p">In time it became less and less clear where I ended and someone else began. And it seemed that everyone experienced something similar. As though the island itself, the people, and the space around us were gradually becoming one whole. Each understood that they were living through an experience of dissolution — into those around them, into this place, into life itself, which had placed us there. Sometimes it began to seem to me that the island had not separated us, but rather had shown that all this time we had already been something unified, only we had not noticed it before. As though the self was slowly dissolving within a shared reality that included the invisible observer and those who kept us on the island.</p>`,
+    `<p class="p">And along with this came another understanding — that life is overwhelmingly stronger than we are, stronger than our desires, intentions, and strivings. And even deeper there opened a sense that the desires themselves had never truly belonged to us. As though life reproduced them within us just as it reproduced events, circumstances, and all the experience we passed through on the island. As though the island itself was merely a form of life that had placed us within a certain experience, which was gradually becoming us.</p>
+    <p class="p">We grew old side by side, barely noticing it. And gradually existence on the island began to seem the only possible form of life. Over time the boundaries between us became less and less perceptible. As though, having lived alongside each other for so many years, we gradually dissolved into one another, into the island itself, into the life that had placed us there. And then, after what felt like an entire eternity, we were released.</p>
+    <p class="p">And with that, the very sensation of the island seemed to vanish. We forgot it, forgot the experience, forgot each other, and in some sense — forgot ourselves.</p>
+    <p class="p">And yet I could not shake the feeling that the dream had not ended. That the island had not disappeared — it had simply dissolved into what became ordinary life. As though we had not woken up, but merely passed into another part of it, where the same laws operated differently — without shores, without a path, without a shared circle, but with the same invisible presence that had once held us together.</p>`,
+    `<p class="p">People found themselves in different corners of the world, amid different lives, different cities, different circumstances. But after some time fragments of that experience began to surface within me — like memories of a dream one cannot hold onto whole. I did not remember faces. I remembered only states, sensations, the feeling itself of dissolving into one another and into that shared life of which we had once been a part.</p>
+    <p class="p">And with this came an almost irresistible feeling that I needed to find someone, though I did not yet understand who.</p>
+    <p class="p">So I began to search not by faces, but by myself — by habits, movements, craft, by the things I continued doing on my own. Because once on the island we had grown too similar to each other. And gradually, finding these people in different cities and foreign lives, I began to understand that I was searching not simply for other people, but for fragments of that shared experience within which we had once ceased to be something separate.</p>
+    <p class="p">When I found someone among them, at first they did not recognise me. Then I showed them something that no one could have known except those who had been on the island. And in that moment recognition arose between us again — not of me as a person, but of the shared experience that had once united us within one and the same life.</p>
+    <p class="p">And gradually it became ever clearer that all this time memory had been trying to reassemble not recollections of other people, but something that had once divided itself within one and the same self.</p>`,
+
+    `<p class="p">It seems to me that some people meet at the end of life in exactly this way. Not as old friends, but as parts of something whole, once separated by life itself and briefly reunited by it through shared memory of what was lived through.</p>`
+  ],
+
+  ro: [
+    `<p class="p drop">Am visat un vis. Nu știu dacă acolo a fost o catastrofă sau vreo calamitate colectivă, dar în aer plutea senzația că acest eveniment a atins pe fiecare în mod radical și ireversibil. Am visat un loc care semăna cu o insulă. Eu am fost adus acolo împreună cu oameni, printre care și cei pe care îi cunoșteam aproape toată viața conștientă. Am crescut pe aceleași străzi și în aceleași curți. Și dintr-un motiv oarecare știam că tocmai cei care au provocat această nenorocire m-au adus acolo. Aveam senzația că ei nu dispăruseră nicăieri și ne supravegheau tot timpul. Am fost lăsați să trăim sub atenția nevăzută a cuiva. Nimeni nu venea la noi, dar toți înțelegeau că era imposibil să ieși de acolo.</p>
+    <p class="p">Insula era foarte mică — atât de mică încât o puteai traversa pe jos în câteva minute. Un lac mic, câțiva copaci, o cărare îngustă în jurul apei și un loc unde se aflau provizii. Mergeam tot timpul pe acest cerc, rămânând mereu în vizorul celorlalți.</p>
+    <p class="p">Restul timpului se petrecea într-un spațiu strâmt unde era imposibil să nu-i observi pe cei din jur. Nu pentru că doream să-i cunoaștem mai îndeaproape, ci pentru că viața de acolo era orânduită astfel încât observarea permanentă devenea parte firească a ei. Cu timpul am început să cunoaștem obiceiurile celorlalți, reacțiile, tăcerile, mișcările — cum mănâncă, se uită, gândește fiecare, cu ce se ocupă și exact cum face asta.</p>`,
+    `<p class="p">Ne observam unii pe alții, știind că și noi eram observați. Mai târziu tuturor ne-a devenit clar că această observare nu avea niciun motiv anume — ca și cum nu ar fi existat nicio necesitate pentru ea. Dimpotrivă — necesitatea însăși genera observarea. Nu era clar ce o genera și cine stătea în spatele acestui proces. Acest sentiment nu mă părăsea nici ziua, nici noaptea, când luna se reflecta în luciul nemișcat al lacului în care fiecare dintre noi privea aproape intuitiv, ca și cum ar fi încercat să descopere în acea reflecție fragmentul lipsă al înțelegerii.</p>
+    <p class="p">Prea puțin spațiu ca să-ți ascunzi propria viață. Totul se petrecea la vedere — cotidianul, slăbiciunile, bolile, pofta, stângăcia, singurătatea, iritarea, tăcerea. Chiar și când cineva se îndepărta spre lac, spre copaci sau pur și simplu deoparte, ceilalți înțelegeau oricum unde, de ce și pentru ce. Treptat am început să-i înțelegem pe cei din jur la fel de bine cum ne înțelegeam pe noi înșine, fiindcă trăiam aceleași stări și repetam același lucru. Mai târziu chiar și încercările de a ascunde ceva începeau să-și piardă sensul. Oricum devenea vizibil cine este omul cu adevărat, de ce se teme, de ce fuge, ce încearcă să ascundă în sine și ce vrea în realitate. Esența fiecăruia ajungea treptat ca în palma celorlalți.</p>
+    <p class="p">Apoi părea că, observându-i pe cei din jur, ajungeam treptat să cunoaștem structura noastră interioară. Ca și cum, prin obiceiurile, temerile, dorințele și reacțiile altora, fiecare dintre noi încerca să înțeleagă de unde apare personalitatea și de ce omul devine tocmai cel care devine. Și cu cât îi cunoșteam mai profund pe ceilalți, cu atât mai limpede începeam să ne vedem pe noi înșine.</p>`,
+    `<p class="p">Cu timpul venea înțelegerea că fiecare om care intră în viața noastră devine treptat parte din noi înșine — se reflectă în interiorul personalității, transformându-se în una dintre componentele ei interioare.</p>
+    <p class="p">Și într-o zi mi s-a părut că oamenii care se aflaseră cu mine pe insulă, cei care ne supravegheau și chiar cei care ne aduseseră acolo nu fuseseră niciodată ceva cu adevărat separat. Ca și cum o catastrofă interioară mă împărțise cândva în numeroase figuri reflectate în oamenii care apăruseră vreodată în viața mea. Și cu cât mă uitam mai mult la ei, cu atât mai puternică devenea senzația că tot acest timp nu urmărisem viețile altora, ci diferite forme ale propriei personalități sfărâmate, care se reunea treptat cu propriile cioburi — prin felul în care ne observam, ne recunoșteam și ne trăiam unii prin alții.</p>
+    <p class="p">Cu timpul simțeam tot mai puțin unde mă terminam eu și unde începea altcineva. Și se părea că toți trăiau ceva asemănător. Ca și cum insula însăși, oamenii și spațiul din jur deveneau treptat un întreg. Fiecare înțelegea că trăiește o experiență a dizolvării — în cei din jur, în acest loc, în viața însăși care ne plasase acolo. Uneori mi se părea că insula nu ne despărțise, ci dimpotrivă — arătase că tot acest timp fusesem deja ceva unitar, doar că nu observasem. Ca și cum personalitatea se dizolva lent în interiorul unei realități comune care îl includea și pe acel observator nevăzut, și pe cei care ne rețineau pe insulă.</p>`,
+    `<p class="p">Și împreună cu aceasta venea o altă înțelegere — că viața este irezistibil mai puternică decât noi înșine, mai puternică decât dorințele, intențiile și aspirațiile noastre. Și și mai adânc se dezvăluia senzația că și dorințele înseși nu ne aparținuseră cu adevărat niciodată. Ca și cum viața le reproduce în noi la fel cum reproducea evenimentele, împrejurările și întreaga experiență prin care treceam pe insulă. Ca și cum insula însăși nu era decât o formă a vieții care ne plasase înăuntrul unei anumite trăiri, devenind treptat noi înșine.</p>
+    <p class="p">Îmbătrâneam împreună, aproape fără să observăm. Și treptat existența pe insulă începea să pară singura formă posibilă de viață. Cu timpul granițele dintre noi deveneau tot mai puțin perceptibile. Ca și cum, trăind alături atâția ani, ne dizolvam treptat unii în alții, în insula însăși și în viața care ne plasase acolo. Și apoi, după ce părea o veșnicie, am fost eliberați.</p>
+    <p class="p">Și odată cu aceasta, senzația insulei părea să dispară. Am uitat-o, am uitat experiența, am uitat unii de alții și, într-un anumit sens — pe noi înșine.</p>
+    <p class="p">Și totuși nu mă părăsea senzația că visul nu se terminase. Că insula nu dispăruse — ea se dizolvase pur și simplu în ceea ce devenise viața obișnuită. Ca și cum nu ne trezisem, ci doar trecusem într-o altă parte a lui, unde aceleași legi acționau altfel — fără maluri, fără cărare, fără cercul comun, dar cu aceeași prezență nevăzută care cândva ne ținuse împreună.</p>`,
+    `<p class="p">Oamenii s-au regăsit în diferite colțuri ale lumii, în alte vieți, alte orașe, alte împrejurări. Dar după un timp au început să îmi revină fragmente din acea trăire — ca amintiri dintr-un vis pe care nu-l poți reține întreg. Nu îmi aminteam chipuri. Îmi aminteam doar stări, senzații, însuși sentimentul de a ne fi dizolvat unii în alții și în viața comună din care am făcut cândva parte.</p>
+    <p class="p">Și odată cu aceasta a apărut sentimentul aproape irezistibil că trebuia să găsesc pe cineva, deși nu înțelegeam încă pe cine anume.</p>
+    <p class="p">Atunci am început să caut nu după chipuri, ci după mine însumi — după obiceiuri, mișcări, meșteșug, după lucrurile pe care continuam să le fac singur. Fiindcă odată pe insulă deveniisem prea asemănători unii cu alții. Și treptat, găsindu-i pe acești oameni în diferite orașe și vieți străine, înțelegeam că nu caut pur și simplu alți oameni, ci fragmente din acea trăire comună în interiorul căreia noi cândva am încetat să mai fim ceva separat.</p>
+    <p class="p">Când găseam pe cineva dintre ei, la început nu eram recunoscut. Atunci le arătam ceva ce nu putea ști nimeni în afară de cei care fuseseră pe insulă. Și în acel moment între noi reapărea recunoașterea — nu a mea ca persoană, ci a acelei experiențe comune care ne unise cândva înăuntrul uneia și aceleiași vieți.</p>
+    <p class="p">Și treptat devenea tot mai limpede că tot acest timp memoria încerca să recompună nu amintiri despre alți oameni, ci ceva care se despărțise cândva înăuntrul uneia și aceleiași personalități.</p>`,
+
+    `<p class="p">Mi se pare că unii oameni se întâlnesc la sfârșitul vieții tocmai astfel. Nu ca vechi prieteni, ci ca părți ale unui întreg, cândva separat de viața însăși și din nou reunit de ea prin amintirea comună a ceea ce a fost trăit.</p>`
+  ]
+};
+const numerals = ['i','ii','iii','iv','v','vi','vii','viii','ix','x','xi','xii'];
+
+function renderPages(lang) {
+  const container = document.getElementById('pages-container');
+  container.innerHTML = '';
+  const ps = pages[lang];
+  ps.forEach((content, idx) => {
+    const div = document.createElement('div');
+    div.className = 'page';
+    div.id = 'p' + (idx + 1);
+    const isLast = idx === ps.length - 1;
+    const isFirst = idx === 0;
+    div.innerHTML = `
+      <div class="textpage">
+        <div class="tbody">${content}</div>
+        <div class="page-rule"><div class="page-rule-line"></div><div class="page-rule-dot"></div><div class="page-rule-line"></div></div>
+        <div class="nav">
+          <button class="nbtn l ${isFirst ? 'hide' : ''}" onclick="go(${idx})">‹ ${lang==='ru'?'назад':lang==='en'?'back':'înapoi'}</button>
+          <span class="nnum">${numerals[idx] || (idx+1)}</span>
+          <button class="nbtn r ${isLast ? 'hide' : ''}" onclick="go(${idx + 2})">${lang==='ru'?'далее':lang==='en'?'next':'următor'} ›</button>
+        </div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function cycleLang(e) {
+  e.stopPropagation();
+  langIdx = (langIdx + 1) % 3;
+  const lang = LANGS[langIdx];
+
+  // Update cover text
+  const ct = coverText[lang];
+  document.getElementById('cg').textContent = ct.genre;
+  document.getElementById('ct').innerHTML = ct.title;
+  document.getElementById('cs').textContent = ct.sub;
+  document.getElementById('ca').textContent = ct.author;
+  document.getElementById('ch').textContent = ct.hint;
+  document.getElementById('langIndicator').textContent = lang;
+
+  // Re-render pages
+  renderPages(lang);
+
+  // If we're not on cover, go to same page in new lang
+  if (cur > 0) {
+    const targetPage = document.getElementById('p' + cur);
+    if (targetPage) targetPage.classList.add('active');
+  }
+}
+
+function go(n) {
+  const total = pages[LANGS[langIdx]].length;
+  if (n < 0 || n > total) return;
+  document.getElementById('p' + cur)?.classList.remove('active');
+  if (n === 0) {
+    document.getElementById('p0').classList.add('active');
+  } else {
+    document.getElementById('p' + n)?.classList.add('active');
+  }
+  cur = n;
+}
+
+// Cover click — go to page 1
+document.getElementById('coverDiv').addEventListener('click', function(e) {
+  if (e.target.closest('#dragonfly-btn')) return;
+  go(1);
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  const total = pages[LANGS[langIdx]].length;
+  if (e.key==='ArrowRight'||e.key===' ') { if (cur < total) go(cur+1); }
+  if (e.key==='ArrowLeft') { if (cur > 0) go(cur-1); }
+});
+
+// Swipe
+let tx=0;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx;
+  const total=pages[LANGS[langIdx]].length;
+  if(Math.abs(dx)>40){
+    if(dx<0&&cur<total) go(cur+1);
+    else if(dx>0&&cur>0) go(cur-1);
+  }
+},{passive:true});
+
+// Init
+renderPages('ru');
+
+// ── CANVAS COVER DRAW ──────────────────────────────────────────────
+function drawCover() {
+  const canvas = document.getElementById('cvs');
+  const cover  = canvas.parentElement;
+  const W = cover.offsetWidth;
+  const H = cover.offsetHeight;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const baseGrad = ctx.createRadialGradient(W*0.35, H*0.3, 0, W*0.5, H*0.5, W*0.85);
+  baseGrad.addColorStop(0,   '#0e1a3d');
+  baseGrad.addColorStop(0.4, '#0a1228');
+  baseGrad.addColorStop(1,   '#060810');
+  ctx.fillStyle = baseGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = 0; i < 12000; i++) {
+    const x = Math.random() * W;
+    const y = Math.random() * H;
+    const bright = Math.random() > 0.55;
+    const a = Math.random() * (bright ? 0.028 : 0.038);
+    ctx.fillStyle = bright ? `rgba(140,160,220,${a})` : `rgba(0,0,0,${a})`;
+    ctx.fillRect(x, y, Math.random() < 0.3 ? 2 : 1, 1);
+  }
+
+  const lightGrad = ctx.createRadialGradient(W*0.3, H*0.22, 0, W*0.3, H*0.22, W*0.7);
+  lightGrad.addColorStop(0,   'rgba(80,100,200,0.14)');
+  lightGrad.addColorStop(0.5, 'rgba(50,70,150,0.05)');
+  lightGrad.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.fillStyle = lightGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── BORDER & ORNAMENT — minimal, sunken, dark premium
+  const brd = Math.round(Math.min(W, H) * 0.068);
+
+  // Colours: dark indigo-gold, barely visible, sinking into leather
+  const g0 = 'rgba(20,18,35,0.9)';   // deep shadow groove
+  const g1 = 'rgba(40,35,18,0.55)';  // mid tone
+  const g2 = 'rgba(90,75,30,0.22)';  // faint gold shimmer
+
+  // ── Single hairline outer frame
+  ctx.strokeStyle = g1;
+  ctx.lineWidth = 0.4;
+  ctx.strokeRect(8, 8, W-16, H-16);
+
+  // ── Main border rectangle — sunken groove (shadow above, highlight below)
+  const m = brd;
+  // Shadow line — 1px above/left (makes groove look recessed)
+  ctx.strokeStyle = g0;
+  ctx.lineWidth = 0.7;
+  ctx.strokeRect(m+0.6, m+0.6, W-m*2-1.2, H-m*2-1.2);
+  // Main line
+  ctx.strokeStyle = g1;
+  ctx.lineWidth = 0.5;
+  ctx.strokeRect(m, m, W-m*2, H-m*2);
+  // Faint highlight — 1px opposite
+  ctx.strokeStyle = g2;
+  ctx.lineWidth = 0.35;
+  ctx.strokeRect(m-0.5, m-0.5, W-m*2+1, H-m*2+1);
+
+  // ── Second inner line — very faint
+  ctx.strokeStyle = g0;
+  ctx.lineWidth = 0.4;
+  ctx.strokeRect(m+6, m+6, W-m*2-12, H-m*2-12);
+  ctx.strokeStyle = g2;
+  ctx.lineWidth = 0.25;
+  ctx.strokeRect(m+5.5, m+5.5, W-m*2-11, H-m*2-11);
+
+  // ── Sunken groove line — helper
+  function sunkLine(ax, ay, bx, by) {
+    ctx.beginPath(); ctx.moveTo(ax+0.5, ay+0.5); ctx.lineTo(bx+0.5, by+0.5);
+    ctx.strokeStyle = g0; ctx.lineWidth = 0.6; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
+    ctx.strokeStyle = g1; ctx.lineWidth = 0.35; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ax-0.4, ay-0.4); ctx.lineTo(bx-0.4, by-0.4);
+    ctx.strokeStyle = g2; ctx.lineWidth = 0.25; ctx.stroke();
+  }
+
+  // ── Corner ornament — minimal L-bracket with single dot
+  function drawCorner(cx, cy, sx, sy) {
+    // sx/sy = sign (+1 or -1) for direction
+    const len = 14;
+    // Horizontal arm
+    sunkLine(cx, cy, cx + sx*len, cy);
+    // Vertical arm
+    sunkLine(cx, cy, cx, cy + sy*len);
+    // Small diamond at corner joint
+    const ds = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - ds*sy);
+    ctx.lineTo(cx + ds*sx, cy);
+    ctx.lineTo(cx, cy + ds*sy);
+    ctx.lineTo(cx - ds*sx, cy);
+    ctx.closePath();
+    ctx.strokeStyle = g0; ctx.lineWidth = 0.5; ctx.stroke();
+    ctx.fillStyle = g1; ctx.fill();
+    // Faint highlight on diamond
+    ctx.beginPath();
+    ctx.moveTo(cx - ds*sx*0.6, cy - ds*sy*0.6);
+    ctx.lineTo(cx, cy - ds*sy*0.6);
+    ctx.strokeStyle = g2; ctx.lineWidth = 0.3; ctx.stroke();
+  }
+
+  const p = m - 4; // corner position inside border
+  drawCorner(p, p,         +1, +1);
+  drawCorner(W-p, p,       -1, +1);
+  drawCorner(p, H-p,       +1, -1);
+  drawCorner(W-p, H-p,     -1, -1);
+
+  // ── Midpoint ornament on each side — single slim diamond
+  function midDiamond(cx, cy, horiz) {
+    const d = 5;
+    ctx.beginPath();
+    if (horiz) {
+      ctx.moveTo(cx-d, cy); ctx.lineTo(cx, cy-d*0.5);
+      ctx.lineTo(cx+d, cy); ctx.lineTo(cx, cy+d*0.5);
+    } else {
+      ctx.moveTo(cx, cy-d); ctx.lineTo(cx+d*0.5, cy);
+      ctx.lineTo(cx, cy+d); ctx.lineTo(cx-d*0.5, cy);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = g0; ctx.lineWidth = 0.5; ctx.stroke();
+    ctx.fillStyle = 'rgba(30,25,12,0.6)'; ctx.fill();
+    ctx.strokeStyle = g2; ctx.lineWidth = 0.25; ctx.stroke();
+  }
+
+  midDiamond(W/2, m,   true);
+  midDiamond(W/2, H-m, true);
+  midDiamond(m,   H/2, false);
+  midDiamond(W-m, H/2, false);
+
+  const vig = ctx.createRadialGradient(W/2, H/2, H*0.22, W/2, H/2, H*0.78);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
+}
+
+window.addEventListener('load', drawCover);
+window.addEventListener('resize', () => setTimeout(drawCover, 80));
+</script>
+</body>
+</html>
